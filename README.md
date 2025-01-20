@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Introduction to Python Programming An
 
 This repository contains a collection of Jupyter/IPython Notebooks introducing fundamental programming concepts in Python. These concepts are common to many programming languages, and can be applied in other languages with different syntax. The notebooks are intended to guide students in learning the basic functionality of programming in Python, as well as introduce some of the most useful Python libraries.
@@ -84,3 +85,7 @@ This repository was edited from `python-in-a-notebook` by [Valerio Maggio](https
 
 ## License and Sharing Material
 <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/80x15.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
+=======
+# Python4LM25
+1LM
+>>>>>>> 4d7bc112344edf1a779e03d14a507afc782da336
