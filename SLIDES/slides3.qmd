@@ -1,0 +1,793 @@
+---
+title: "Functions"
+subtitle: "Python 4 LM : Hap.py Code"
+author: "Abdallah Khemais"
+format:
+  revealjs:
+    theme: default
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: images/python-logo.png
+    css: styles.css
+filters:
+  - pyodide
+---
+
+## Warmup
+
+Write a program that, given a list of letters, finds all anagrams.
+
+```python
+$ python anagrammer.py
+Letters? unicorn
+Anagram(s): UNICORN
+Letters? python
+Anagram(s): PYTHON, PHYTON
+Letters? aoiuvbosidbvoahbs
+Anagram(s): None
+```
+
+> **Key insight:** The sorted letters of any two anagrams is the same.
+> Consider making a dict `{sorted_letters: set_of_words}`.
+
+---
+
+## Today in Python for LM
+
+:::: {.columns}
+::: {.column width="50%"}
+- Review of Data Structures
+- Advanced Looping
+- Comprehensions
+- Inside Python Functions
+- Parameters
+:::
+
+::: {.column width="50%"}
+- Variadic Arguments
+- Parameter Ordering
+- Aside: Code Style
+- First-Class Functions
+:::
+::::
+
+---
+
+# Review of Data Structures
+
+---
+
+## Data Structures — Quick Reference
+
+<div style="font-size: 0.85em;">
+
+| Structure | Syntax | Properties |
+|-----------|--------|------------|
+| **List** | `[whatever, objects, you, want]` | Ordered, mutable |
+| **Tuple** | `(frozen, sequence, of, objects)` | Ordered, immutable |
+| **Dictionary** | `{key: value}` | Mutable key-value map |
+| **Set** | `{unique, hashable, values}` | Unordered, distinct |
+
+</div>
+
+---
+
+# Advanced Looping
+
+---
+
+## `zip`
+
+```{pyodide-python}
+questions = ['name', 'quest', 'favorite color']
+answers   = ['lancelot', 'the holy grail', 'blue']
+
+# zip generates pairs of entries from its arguments
+for q, a in zip(questions, answers):
+    print('What is your {0}? It is {1}.'.format(q, a))
+# What is your name? It is lancelot.
+# What is your quest? It is the holy grail.
+# What is your favorite color? It is blue.
+```
+
+---
+
+## `sorted`
+
+```{pyodide-python}
+basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
+
+# Returns a new sorted list while leaving the source unaltered
+for f in sorted(set(basket)):
+    print(f)
+# apple
+# banana
+# orange
+# pear
+```
+
+---
+
+# Comprehensions
+
+---
+
+## Square Numbers — Two Ways
+
+```{pyodide-python}
+# The classic way
+squares = []
+for x in range(10):
+    squares.append(x**2)
+print(squares)
+
+# The Pythonic way — list comprehension
+squares = [x ** 2 for x in range(10)]
+print(squares)
+```
+
+---
+
+## List Comprehension Syntax
+
+```python
+# Basic form
+[fn(x) for x in iterable]
+
+# With filter condition
+[fn(x) for x in iterable if cond(x)]
+```
+
+```{pyodide-python}
+sentence = "Python is amazing"
+# Lowercase all words
+print([word.lower() for word in sentence.split()])
+
+# Remove vowels
+print([ch for ch in "unicorn" if ch not in 'aeiou'])
+
+# Tuples of powers
+print([(x, x**2, x**3) for x in range(1, 5)])
+```
+
+---
+
+## Your Turn!
+
+```{pyodide-python}
+# [0, 1, 2, 3] -> [1, 3, 5, 7]
+print([x * 2 + 1 for x in [0, 1, 2, 3]])
+
+# [3, 8, 9, 5] -> [True, False, True, False]
+print([x % 2 != 0 for x in [3, 8, 9, 5]])
+
+# ['apple', 'orange', 'pear'] -> ['A', 'O', 'P']
+print([word[0].upper() for word in ['apple', 'orange', 'pear']])
+
+# ['apple', 'orange', 'pear'] -> [('apple', 5), ('orange', 6), ('pear', 4)]
+print([(word, len(word)) for word in ['apple', 'orange', 'pear']])
+```
+
+---
+
+## Other Comprehensions
+
+```{pyodide-python}
+# Dictionary comprehension
+fav_animals = {'parth': 'unicorn', 'michael': 'elephant',
+               'zheng': 'tree', 'sam': 'ox'}
+
+# Invert: animal -> person
+fav_humans = {val: key for key, val in fav_animals.items()}
+print(fav_humans)
+
+# Set comprehension
+unique_lengths = {len(word) for word in ['apple', 'pear', 'orange']}
+print(unique_lengths)
+```
+
+---
+
+## Why Comprehensions?
+
+<div class="fragment">**Usual focus:** Modify individual elements of an iterable.</div>
+
+<div class="fragment">
+**Comprehensions ≈ Abstract Transformations**
+
+Don't say *how* you want the object constructed — just say *what* you want in the object.
+</div>
+
+<div class="fragment">If you liked this, stay tuned… **Functional Programming!** 🚀</div>
+
+---
+
+# Inside Python Functions
+
+---
+
+## So Far…
+
+The `def` keyword defines a new function:
+
+```python
+def fn_name(param1, param2):
+    ...
+    return some_value
+```
+
+<div style="font-size: 0.85em;">
+
+**Some nuances:**
+
+- All functions return a value — if not specified, they return `None` implicitly
+- Returning multiple values → use a tuple: `return val1, val2, val3`
+  - ⚠️ Callers might not expect a tuple — consider using a `namedtuple`
+
+</div>
+
+---
+
+## Function Execution and Scope
+
+<div style="font-size: 0.85em;">
+
+- Function execution introduces a new **local symbol table** (literally: a dict associating names to values)
+- Variable assignments add to the local symbol table (or overwrite existing values)
+- Variable references check a **tower of scopes**:
+
+</div>
+
+```
+Builtins
+  └── Global Scope
+        └── Enclosing Function Scope
+              └── Local Function Scope   ← checked first
+```
+
+If `y` is not found at any level → `NameError`
+
+---
+
+## Variable Resolution: An Example
+
+```{pyodide-python}
+x = 2
+
+def foo(y):
+    z = 5
+    print("locals:", locals())
+    print("global x:", globals()['x'])
+    print("x, y, z:", x, y, z)
+
+foo(3)
+# locals: {'y': 3, 'z': 5}
+# global x: 2
+# x, y, z: 2 3 5
+```
+
+---
+
+## Local Variable Shadows Global
+
+```{pyodide-python}
+x = 2
+
+def foo(y):
+    x = 41   # local x shadows global x
+    z = 5
+    print("locals:", locals())
+    print("global x:", globals()['x'])
+    print("x, y, z:", x, y, z)
+
+foo(3)
+# locals: {'y': 3, 'x': 41, 'z': 5}
+# global x: 2
+# x, y, z: 41 3 5
+```
+
+---
+
+## Scope vs. Namespaces
+
+<div style="font-size: 0.85em;">
+
+- A **namespace** is a dictionary mapping names (as strings) to values
+- A **scope** defines which namespaces will be looked in and in what order
+- Scopes can be overlapping, but namespaces are not
+- Only `def` and `class` define new scopes/namespaces
+
+```{pyodide-python}
+success = True
+
+if success:
+    desc = 'Winner! :)'
+else:
+    desc = 'Loser :('
+
+# `if` does NOT create a new scope — desc is accessible here!
+print(desc)
+```
+
+</div>
+
+---
+
+## Pass-by-Value or Pass-by-Reference?
+
+<div style="font-size: 0.85em;">
+
+Think of it as **pass-by-object-reference**:
+
+- Variables are copied into the function's local symbol table
+- But variables are just **references** to objects!
+
+</div>
+
+```{pyodide-python}
+# Immutable — local rebinding, no effect on caller
+def foo_int(x):
+    x += 1
+
+x = 5
+foo_int(x)
+print(x)  # => 5  (unchanged)
+
+# Mutable — mutation propagates to caller
+def foo_list(x):
+    x.append(41)
+
+x = [5]
+foo_list(x)
+print(x)  # => [5, 41]
+```
+
+---
+
+# Parameters
+
+---
+
+## Default Parameters
+
+Specify a default value for one or more parameters — the function can then be called with fewer arguments.
+
+**Why?**
+
+- Presents a simplified interface
+- Provides reasonable defaults
+- Declares certain parameters as "extra"
+
+```{pyodide-python}
+def ask_yn(prompt, retries=4, complaint="Enter Y or N!"):
+    print(f"Prompt: {prompt!r}, retries: {retries}, complaint: {complaint!r}")
+
+ask_yn('Ok to overwrite the file?')         # uses defaults
+ask_yn('Ok to overwrite the file?', 2)      # overrides retries
+```
+
+---
+
+## Default Parameters in Action
+
+```{pyodide-python}
+def ask_yn(prompt, retries=4, complaint="Enter Y or N!"):
+    """Ask a yes/no question, retrying up to `retries` times."""
+    for _ in range(retries):
+        ans = input(prompt + " (y/n): ")
+        if ans in 'yY':
+            return True
+        if ans in 'nN':
+            return False
+        print(complaint)
+    return False
+
+# Within the function: treat params just like always!
+```
+
+---
+
+## Keyword Arguments
+
+All parameters can be called **by position** or **by keyword**:
+
+```{pyodide-python}
+def ask_yn(prompt, retries=4, complaint="Enter Y or N!"):
+    print(f"prompt={prompt!r}, retries={retries}, complaint={complaint!r}")
+
+# All valid:
+ask_yn('Ok?', 2)
+ask_yn('Ok?', retries=2)
+ask_yn(prompt="Are you sure?", retries=2)
+ask_yn(retries=2, prompt="Are you sure?")   # order doesn't matter for kwargs!
+```
+
+**Why?** Makes parameter intent clearer — name conveys more than position.
+
+---
+
+## Keyword Arguments — Real-World Examples
+
+```{pyodide-python}
+# These built-ins all use default/keyword args:
+print("a", "b", "c", sep="-", end="!\n")
+
+# range(start, stop, step=1)
+print(list(range(0, 10, 2)))
+
+# enumerate(iter, start=0)
+for i, ch in enumerate("abc", start=1):
+    print(i, ch)
+```
+
+---
+
+# Variadic Arguments
+
+---
+
+## Variadic Positional Arguments (`*args`)
+
+`*args` captures **excess positional arguments** into a tuple.
+
+**Why?**
+
+- Call functions with any number of positional arguments
+- Capture all arguments to forward to another handler
+- Used in subclasses, proxies, and decorators
+
+```{pyodide-python}
+def scaled_sum(*args, scale=1):
+    return scale * sum(args)
+
+print(scaled_sum(1, 2, 3))          # => 6
+print(scaled_sum(1, 5))             # => 6
+print(scaled_sum(1, 5, scale=10))   # => 60
+```
+
+---
+
+## Unpacking into `*args`
+
+```{pyodide-python}
+def scaled_sum(*args, scale=1):
+    return scale * sum(args)
+
+def is_prime(p):
+    if p < 2: return False
+    return all(p % i != 0 for i in range(2, p))
+
+primes = [p for p in range(1, 50) if is_prime(p)]
+print(f"Primes: {primes}")
+
+# Unpack list into positional args with *
+print(f"Sum of primes: {scaled_sum(*primes)}")
+print(f"Scaled by 10: {scaled_sum(*primes, scale=10)}")
+```
+
+---
+
+## Variadic Keyword Arguments (`**kwargs`)
+
+`**kwargs` captures **excess keyword arguments** into a dict.
+
+**Why?**
+
+- Allow arbitrary named parameters (usually for configuration)
+- Capture all arguments to forward to another handler
+- Used in subclasses, proxies, and decorators
+
+---
+
+```{pyodide-python}
+def stylize_quote(quote, **speaker_info):
+    print(f"> {quote}")
+    print('-' * (len(quote) + 2))
+    for k, v in speaker_info.items():
+        print(f"{k}: {v}")
+
+stylize_quote("If music be the food of love, play on.",
+              act=1, scene=1, speaker="Duke Orsino",
+              playwright="Shakespeare")
+```
+
+---
+
+## Unpacking into `**kwargs`
+
+```{pyodide-python}
+def stylize_quote(quote, **speaker_info):
+    print(f"> {quote}")
+    print('-' * (len(quote) + 2))
+    for k, v in speaker_info.items():
+        print(f"{k}: {v}")
+
+info = {
+    'speaker': 'Iron Man',
+    'year': 2012,
+    'movie': 'The Avengers'
+}
+
+# Unpack dict into keyword args with **
+stylize_quote("Doth mother know you weareth her drapes?", **info)
+```
+
+---
+
+## `str.format(*args, **kwargs)`
+
+```{pyodide-python}
+# {n} refers to nth positional argument
+print("First, thou shalt count to {0}".format(3))
+
+# {key} refers to keyword argument
+print("lobbest thou thy {weapon} towards thy foe".format(
+    weapon="Holy Hand Grenade of Antioch"
+))
+
+# Mixed positional and keyword
+print("{0}{b}{1}{a}{0}{2}".format(5, 8, 9, a='z', b='x'))
+# => 5x8z59
+```
+
+---
+
+## A Cute `format` Trick
+
+```{pyodide-python}
+x = 3
+y = 4
+z = 5
+
+# Long way:
+print("{z}^2 = {x}^2 + {y}^2".format(x=x, y=y, z=z))
+
+# Using locals() — equivalent to .format(x=3, y=4, z=5, ...)
+print("{z}^2 = {x}^2 + {y}^2".format(**locals()))
+
+# This is essentially how f-strings work!
+print(f"{z}^2 = {x}^2 + {y}^2")
+```
+
+---
+
+# Parameter Ordering
+
+---
+
+## The Three Rules
+
+<div style="font-size: 0.85em;">
+
+1. **Keyword arguments** must follow positional arguments
+2. **All arguments** must identify some parameter (even positional ones)
+3. **No parameter** may receive a value more than once
+
+</div>
+
+```{pyodide-python}
+def parrot(voltage, state='a stiff', action='voom', type='Norwegian Blue'):
+    print(f"-- This parrot wouldn't {action} if you put {voltage} volts through it.")
+    print(f"-- Lovely plumage, the {type}")
+    print(f"-- It's {state} !")
+
+# All valid calls:
+parrot(1000)
+parrot(voltage=1000)
+parrot(voltage=1000000, action='VOOOOOM')
+parrot('a million', 'bereft of life', 'jump')
+parrot('a thousand', state='pushing up the daisies')
+```
+
+---
+
+## Invalid Calls
+
+```python
+def parrot(voltage, state='a stiff', action='voom', type='Norwegian Blue'):
+    ...
+
+parrot()                        # ❌ required argument missing
+parrot(voltage=5.0, 'dead')     # ❌ positional after keyword
+parrot(110, voltage=220)        # ❌ duplicate value for voltage
+parrot(actor='John Cleese')     # ❌ unknown keyword argument
+```
+
+---
+
+## Parameter Symbols
+
+```python
+def fn(a, b, /, c, d=2, *, e, f=3, **kwargs)
+```
+
+<div style="font-size: 0.85em;">
+
+| Symbol | Meaning |
+|--------|---------|
+| `a, b` before `/` | **Positional-only** (Python 3.8+, PEP 570) |
+| `c, d` between `/` and `*` | **Positional or keyword** |
+| `*` alone | Separator — args after are keyword-only |
+| `e, f` after `*` | **Keyword-only** |
+| `**kwargs` | Captures additional keyword args |
+| `d=2, f=3` | **Default values** — optional args |
+
+</div>
+
+> You'll evaluate valid/invalid calls in lab. Use this as a reference!
+
+---
+
+# Aside: Code Style
+
+---
+
+## Docstrings
+
+The first string literal inside a function body is a **docstring**:
+
+```{pyodide-python}
+def my_function():
+    """Summary line: do nothing, but document it.
+
+    Description: No, really, it doesn't do anything.
+    """
+    pass
+
+# Access it programmatically:
+print(my_function.__doc__)
+# Summary line: do nothing, but document it.
+#
+# Description: No, really, it doesn't do anything.
+```
+
+> More: **PEP 257** — describe params (value/type) and return values. Be consistent!
+
+---
+
+## General Good Practices
+
+<div style="font-size: 0.85em;">
+
+**Spacing**
+
+- Use **4 spaces** to indent. Don't use tabs.
+- Use blank lines to separate functions and logical sections.
+- Spaces around operators and after commas, not inside delimiters.
+
+```python
+a = f(1, 2) + g(3, 4)      # ✅ good
+a = f( 1, 2 ) + g( 3, 4 )  # ❌ bad
+```
+
+**Commenting**
+
+- Comment all nontrivial functions.
+- Add header comments at the top of files before imports.
+- If possible, put comments on their own line.
+
+</div>
+
+---
+
+## Naming & Style Rules
+
+<div style="font-size: 0.85em;">
+
+**Naming conventions:**
+
+| Case | Usage |
+|------|-------|
+| `snake_case` | Variables and functions |
+| `CamelCase` | Classes |
+| `CAPS_CASE` | Constants |
+
+**Decomposition:** Simple is better than complex!
+
+**Automated checking:**
+
+- [pep8.org](https://pep8.org/) — style guide
+- `pycodestyle` — command line linter (`pip install pycodestyle`)
+- PEP 8 Online — for mechanical violations
+
+</div>
+
+---
+
+## Remember the Zen of Python
+
+```{pyodide-python}
+import this
+```
+
+---
+
+# First-Class Functions
+
+---
+
+## Functions are Objects!
+
+```{pyodide-python}
+def echo(arg):
+    return arg
+
+print(type(echo))    # => <class 'function'>
+print(id(echo))      # => some memory address
+print(echo)          # => <function echo at 0x...>
+
+# Assign to another variable
+foo = echo
+print(type(foo))     # => <class 'function'>
+print(id(foo) == id(echo))  # => True (same object!)
+
+print(isinstance(echo, object))  # => True
+```
+
+---
+
+## What Can You Do with Functions?
+
+<div class="fragment">**Pass a function as a parameter** to another function</div>
+
+<div class="fragment">**Return a function** from another function</div>
+
+<div class="fragment">**Store functions** in data structures (lists, dicts…)</div>
+
+<div class="fragment">**Modify a function object** (e.g. decorators)</div>
+
+<div class="fragment">
+
+```{pyodide-python}
+def apply(fn, lst):
+    return [fn(x) for x in lst]
+
+print(apply(str.upper, ["hello", "world"]))
+print(apply(lambda x: x**2, [1, 2, 3, 4]))
+```
+
+</div>
+
+---
+
+## Review
+
+:::: {.columns}
+::: {.column width="50%"}
+- ✅ Data Structures Review
+- ✅ Advanced Looping (`zip`, `sorted`)
+- ✅ Comprehensions
+- ✅ Function Execution & Scope
+:::
+
+::: {.column width="50%"}
+- ✅ Default & Keyword Parameters
+- ✅ Variadic `*args` and `**kwargs`
+- ✅ Parameter Ordering
+- ✅ Code Style & Docstrings
+- ✅ First-Class Functions
+:::
+::::
+
+---
+
+## Summary
+
+<div style="font-size: 0.85em;">
+
+- All functions return some value (possibly `None`)
+- Functions define scopes via **symbol tables**
+- Parameters are passed by **object reference**
+- Functions can have **optional keyword arguments**
+- Functions can take a **variable number** of `*args` and `**kwargs`
+- Use **docstrings** and follow **PEP 8** style
+- Functions are **objects** too — first-class citizens in Python! 🐍
+
+</div>
+
+---
+
+## Thank You! {.center}
+
+![](images/python-logo.png){width="400" fig-align="center"}
