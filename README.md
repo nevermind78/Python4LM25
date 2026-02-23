@@ -9,7 +9,12 @@ To begin make sure you have setup your programming environment correctly, in ord
 
 ### Lecture:
 * [Course Lecture](python_course.pdf)
-
+* 
+### Slides 
+* [slides1](https://nevermind78.github.io/Python4LM25/slides1.html#/title-slide)
+* [slides2](https://nevermind78.github.io/Python4LM25/slides2.html#/title-slide)
+* [slides3](https://nevermind78.github.io/Python4LM25/slides3.html#/title-slide)
+  
 ### Notebooks:
 0. [Introduction to Jupyter Notebooks](00_introduction_to_jupyter_notebooks.ipynb)
 1. [Hello World - first program](01_hello_world.ipynb)
